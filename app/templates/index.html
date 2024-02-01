@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ToDo App</title>
+</head>
+<body>
+    <h1>ToDo App</h1>
+
+    <form method="POST" action="/">
+        <input type="text" name="task" placeholder="Enter a new task" required>
+        <button type="submit">Add Task</button>
+    </form>
+
+    <h2>Tasks:</h2>
+    <ul>
+        {% for todo in todos %}
+            <li>{{ todo[1] }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

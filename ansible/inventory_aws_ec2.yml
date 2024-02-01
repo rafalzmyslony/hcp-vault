@@ -1,0 +1,8 @@
+plugin: amazon.aws.aws_ec2
+hostnames: 
+  - ip-address
+  - private-ip-address
+groups:
+  database: "'database' in tags.Name"
+  todo: "'todo_app_server' in tags.Name"
+  vault: "\"vault server\" in tags.Name"

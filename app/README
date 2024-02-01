@@ -1,0 +1,13 @@
+This app is specially written for Vault project
+
+Simple Todo app written in Python Flask for deploying in my own project with HCP Vault.
+This Todo app needs database to store notes. But to have access to this database, this app needs to takie first password from HCP Vault.
+
+Requirements:
+- it needs to be run in EC2 instance, because app will get secret from HCP Vault which access will be achieved my meta-data (HCP Vault will have AWS auth method --> app auth against Vault by IAM role attached to EC2 instance)
+- Postgresql database - tested in Postgresql 13,14,15 versions.
+- app runs in UWSGI server on port 8080 (uwsgi.ini)
+
+
+
+

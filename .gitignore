@@ -1,0 +1,9 @@
+.terraform*
+*.terraform*
+my_description_details
+.env
+terraform_workdir
+terraform_test_remove
+terraform/terraform*
+terraform/*.key*
+vault_project-todo_app

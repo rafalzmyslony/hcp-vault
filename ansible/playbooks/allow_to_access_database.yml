@@ -1,0 +1,71 @@
+---
+- name: Configure Postgresql - allow access ToDo app and HCP Vault to this database (pg_hba and postgresql.conf)
+  hosts: database
+  gather_facts: yes
+  vars:
+    todo_public_ip: "{{ groups['todo'][0] }}"
+    todo_private_ip: "{{ hostvars[ lookup('ansible.builtin.vars', 'todo_public_ip') ]['private_ip_address'] }}"
+    vault_public_ip: "{{ groups['vault'][0] }}"
+    vault_private_ip: "{{ hostvars[ lookup('ansible.builtin.vars', 'vault_public_ip') ]['private_ip_address'] }}"
+    ansible_user: ubuntu
+    ansible_ssh_common_args: >-
+      -o ProxyCommand="ssh -W %h:%p -l ubuntu {{ todo_public_ip }} -i ../terraform/todo-private.key"
+      -o IdentityFile="../terraform/todo-private.key" 
+  tasks:
+    - name: Print all available facts
+      ansible.builtin.debug:
+        msg: "{{ ansible_facts }}"
+    - name: Listen all in postgresql.conf
+      lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        firstmatch: yes
+        state: present
+        backup: yes
+      loop:
+        - { regexp: '^listen_addresses', line: "listen_addresses = '*'"}
+      become: true         
+    - name: allow todo app connect in pg_hba.conf
+      lineinfile:
+        path: /etc/postgresql/15/main/pg_hba.conf
+        insertafter: "^# IPv4 local connections:"
+        line: "host    all             all             {{ todo_private_ip }}/32           md5"
+        firstmatch: yes
+        state: present
+        backup: yes
+      become: true
+    - name: allow HCP Vault to connect in pg_hba.conf
+      lineinfile:
+        path: /etc/postgresql/15/main/pg_hba.conf
+        insertafter: "^# IPv4 local connections:"
+        line: "host    all             all             {{ vault_private_ip }}/32           md5"
+        firstmatch: yes
+        state: present
+        backup: yes
+      become: true
+    - name: Restart postgresql
+      shell: sudo systemctl restart postgresql.service
+      args:
+        executable: /bin/bash
+
+- name: Restart Todo service after changing password to DB
+  hosts: todo
+  gather_facts: yes
+  vars:
+    todo_public_ip: "{{ groups['todo'][0] }}"
+    ansible_user: ubuntu
+    ansible_ssh_common_args: >-
+      -o IdentityFile="../terraform/todo-private.key"
+  tasks:
+    - name: Restart todo app
+      shell: sudo systemctl restart todo_app.service
+      args:
+        executable: /bin/bash
+    - name: Pause for 5 seconds to build app cache
+      ansible.builtin.pause:
+        seconds: 5
+    - name: Restart todo app
+      shell: sudo systemctl restart todo_app.service
+      args:
+        executable: /bin/bash

@@ -1,0 +1,41 @@
+---
+- name: Change password to postgresql role for todo app by using ansible vault
+  hosts: database
+  gather_facts: yes
+  vars:
+    todo_public_ip: "{{ groups['todo'][0] }}"
+    todo_private_ip: "{{ hostvars[ lookup('ansible.builtin.vars', 'todo_public_ip') ]['private_ip_address'] }}"
+    ansible_user: ubuntu
+    ansible_ssh_common_args: >-
+      -o ProxyCommand="ssh -W %h:%p -l ubuntu {{ todo_public_ip }} -i ../terraform/todo-private.key"
+      -o IdentityFile="../terraform/todo-private.key"
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - ../vars/credentials.yml
+  tasks:
+    - name: Set a new password taking values from ansible vault - vars/credentials.yml
+      shell: sudo -i -u postgres psql -c "ALTER ROLE {{ postgresql_user }} WITH PASSWORD '{{ postgresql_user_password }}';"
+      args:
+        executable: /bin/bash
+      register: output_of_command
+    - name: Print all available facts - debugging purposes
+      ansible.builtin.debug:
+        msg: "{{ postgresql_user_password }} {{ postgresql_user }}"
+- name: Restart Todo service after changing password to DB
+  hosts: todo
+  gather_facts: yes
+  vars:
+    todo_public_ip: "{{ groups['todo'][0] }}"
+    todo_private_ip: "{{ hostvars[ lookup('ansible.builtin.vars', 'todo_public_ip') ]['private_ip_address'] }}"
+    ansible_user: ubuntu
+    ansible_ssh_common_args: >-
+      -o IdentityFile="../terraform/todo-private.key"
+  tasks:
+    - name: Restart todo app
+      shell: sudo systemctl restart todo_app.service
+      args:
+        executable: /bin/bash
+
+  
+
+

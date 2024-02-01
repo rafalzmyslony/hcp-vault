@@ -1,0 +1,44 @@
+- name: Configure todo app for vault - add public IP of HCP Vault server to todo_env (file needed to run Todo App)
+  hosts: todo
+  gather_facts: yes
+  vars:
+    todo_public_ip: "{{ groups['todo'][0] }}"
+    todo_private_ip: "{{ hostvars[ lookup('ansible.builtin.vars', 'todo_public_ip') ]['private_ip_address'] }}"
+    ansible_user: ubuntu
+    ansible_ssh_common_args: >-
+      -o IdentityFile="../terraform/todo-private.key"
+  tasks:
+    - name: Restart todo app
+      shell: sudo systemctl stop todo_app.service
+      args:
+        executable: /bin/bash
+    - name: get ip address of vault server by tags Name and assign to "set_fact"
+      set_fact:
+        ip_vault: "{{ hostvars[host_name]['public_ip_address'] }}"
+      when: hostvars[host_name]['tags']['Name'] == 'vault server'
+      loop: "{{ groups['aws_ec2'] }}"
+      loop_control:
+        loop_var: host_name
+    - name: seting environmental variable for service pointing to vault server
+      lineinfile:
+        path: /home/ubuntu/app/todo_env
+        line: "VAULT_ADDR=http://{{ ip_vault }}:8200"
+        create: yes
+      register: debug
+    - name: display result for debugging purposes
+      debug:
+        msg: "{{ debug }}"
+    - name: Restart todo app
+      shell: sudo systemctl restart todo_app.service
+      args:
+        executable: /bin/bash
+    - name: Pause for 5 seconds to build app cache
+      ansible.builtin.pause:
+        seconds: 5
+    - name: Restart todo app (second time)
+      shell: sudo systemctl restart todo_app.service
+      args:
+        executable: /bin/bash
+
+
+
