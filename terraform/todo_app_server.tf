@@ -51,8 +51,8 @@ apt -y install vault
 
 mkdir /home/ubuntu/app
 cd /home/ubuntu/
-
-git clone https://lgithub.com/rafalzmyslony/hcp-vault.git
+# I used my own repository as source of ToDo application, if you work my repo, then you must change repository to clone
+git clone https://github.com/rafalzmyslony/hcp-vault.git
 cp -r vault/app/* /home/ubuntu/app
 rm -rf vault
 
