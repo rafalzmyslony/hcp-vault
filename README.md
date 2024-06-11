@@ -2,6 +2,9 @@
 Security is crucial in IT world. One aspect of security is secure authentication, e.g. web application that needs to securely connect to database.
 So in this project we deploy HCP Vault as our password manager. For this demonstration, I wrote a simple ToDo web application written in Python Flask that in order to work, it needs database connection (to store notes). It uses HVAC library, to get secret password to database.
 
+## Architecture  
+![hcp-vault-architecture](https://github.com/rafalzmyslony/hcp-vault/assets/33902552/03cd4539-ecd2-4812-81de-d8644253f75e)
+
 ### What this project covers:
 - Use of AWS services, mostly to be more secure, then to provides more features to enrich our goal.
 Postgresql database. It runs on EC2 instance without public IP. But it has access to internet via NAT Gateway, so it can install software, but outside world cannot connect to his machine. Access to DB is only by bastion host which in this case is ToDo app EC2 instance (best practice says that it must be dedicated host with only SSH access to private subnet). Todo server is able to connect to database, because DB has security group which only allows to connect from specific SG - here SG attached only to Todo server.
@@ -84,4 +87,7 @@ cd app && cp get_pass_from_vault_using_database_engine.py get_pass_from_vault.py
 
 I highly recommend you to go on HCP vault server website via web browser <public-ip-address>:8200 (password: root), and see all configuration we created using user data script. For more details go to terraform files, and ansible playbooks, where is all configuration.
 
+## Explanations:
+- EC2 intance needs to have IAM role `vault-role-for-aws-ec2role` attached to instance profile, because HCP Vault is configured to authenticate this specific IAM role (`auth/aws/role/vault-role-for-aws-ec2role`). In To-Do web app there is script which uses Boto3 library to assume this role and get credentials to authenticate to HCP Vault.
+- Most of configuration is in Terraform files.
 
